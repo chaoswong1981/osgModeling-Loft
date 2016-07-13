@@ -1,0 +1,216 @@
+/* -*-c++-*- osgModeling - Copyright (C) 2008 Wang Rui <wangray84@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+#ifndef OSGMODELING_UTILITIES
+#define OSGMODELING_UTILITIES 1
+
+#include <iostream>
+#include <algorithm>
+#include <vEngine/io_utils.h>
+#include <vEngine/Notify.h>
+#include <vEngine/Array.h>
+#include <vEngine/Matrix.h>
+#include <vEngine/Uniform.h>
+#include <vEngine/Plane.h>
+#include <vEngine/BoundingBox.h>
+
+namespace osgModeling {
+
+/** Print debug information on the console. */
+#define PRINT_VEC2(log, v) \
+    std::cout << log << ": " << v.x() << ", " << v.y() << std::endl;
+#define PRINT_VEC3(log, v) \
+    std::cout << log << ": " << v.x() << ", " << v.y() << ", " << v.z() << std::endl;
+
+/** return TRUE if equivalent, meaning that the difference between 2 points is less than an epsilon value.*/
+inline bool equivalent( vEngine::Vec3 lhs, vEngine::Vec3 rhs=vEngine::Vec3(0.0f,0.0f,0.0f), double epsilon=1e-6 )
+{
+    vEngine::Vec3 delta = rhs-lhs;
+    return vEngine::equivalent((double)delta.x(), (double)0.0f, epsilon)
+        && vEngine::equivalent((double)delta.y(), (double)0.0f, epsilon)
+        && vEngine::equivalent((double)delta.z(), (double)0.0f, epsilon);
+}
+
+/** Calculate the bounding rectangle and center point of a points group.
+* \param ptr Beginning of a set of 3D points.
+* \param size Number of points. Maybe dangerous if user inputs incorrect number here.
+* \param center Returns center of the points.
+* \param bound Returns bounding box of the points.
+* \return FALSE if the points group is invalid.
+*/
+extern bool calcBoundAndCenter( vEngine::Vec3* ptr, unsigned int size, vEngine::Vec3* center=0, vEngine::BoundingBox* bound=0 );
+
+/** Calculate the bounding rectangle and center point of a points group. Provided for convenience. */
+extern bool calcBoundAndCenter( vEngine::Vec3Array* pts, vEngine::Vec3* center=0, vEngine::BoundingBox* bound=0 );
+
+/** Calculate the normal of a plane made by vector l1 & l2.
+ * \param l1 The first vector.
+ * \param l2 The second vector in counter-clockwise, or the normal may need to flip.
+ * \param ok FALSE if meets 0-vector or all vectors are parallel.
+ * \return The normal of plane.
+ */
+extern vEngine::Vec3 calcNormal( const vEngine::Vec3 l1, const vEngine::Vec3 l2, bool* ok=0 );
+
+/** Calculate the normal of a plane made by points p1, p2 & p3. Provided for convenience. */
+extern vEngine::Vec3 calcNormal( const vEngine::Vec3 p1, const vEngine::Vec3 p2, const vEngine::Vec3 p3, bool* ok=0 );
+
+/** Calculate the projection of a vector on another vector.
+ * This function may also be useful to calculate the length of a point projected on a line-segment.
+ * The vertical vector is v - v'.
+ * \param v The vector to be projected.
+ * \param target The vector to be projected on.
+ * \return The projection vector.
+ */
+extern vEngine::Vec3 calcProjection( const vEngine::Vec3 v, const vEngine::Vec3 target );
+
+/** Calculate the projection of a vector on a plane.
+ * This function may also be useful to calculate the distance of v and target.
+ * The distance is |v - v'|.
+ * \param v The vector to be projected.
+ * \param target The plane to be projected on.
+ * \return The projection vector.
+ */
+extern vEngine::Vec3 calcProjection( const vEngine::Vec3 v, const vEngine::Plane target );
+
+/** Calculate angle between 2 vectors.
+ * \param v1 The first vector.
+ * \param v2 The second vector.
+ * \return The angle in radian (0 - PI).
+ */
+extern double calcAngle( const vEngine::Vec3 v1, const vEngine::Vec3 v2 );
+
+/** Calculate angle between a vector and a plane.
+ * \param v The vector.
+ * \param p The plane.
+ * \return The angle in radian (-PI_2 - PI_2).
+ */
+extern double calcAngle( const vEngine::Vec3 v, const vEngine::Plane p );
+
+/** Calculate angle between 2 planes.
+ * \param p1 The first plane.
+ * \param p2 The second plane.
+ * \return The angle in radian (0 - PI).
+ */
+extern double calcAngle( const vEngine::Plane p1, const vEngine::Plane p2 );
+
+/** Calculate intersect between 2 lines.
+* \param p1 A point on the first line.
+* \param v1 Direction vector of the first line.
+* \param p2 A point on the second line.
+* \param v2 Direction vector of the second line.
+* \param checkCoplanar Decide if checking 2 lines are co-planar or not.
+* \param ok return FALSE if the lines have no intersections.
+* \param isCoin return TRUE if the lines are coincident.
+* \param pos return the position[0,1] of intersect point on the first line.
+* \return The intersect point.
+*/
+extern vEngine::Vec3 calcIntersect( const vEngine::Vec3 p1, const vEngine::Vec3 v1, const vEngine::Vec3 p2, const vEngine::Vec3 v2, 
+                                                  bool checkCoplanar=true, bool* ok=0, bool* isCoin=0, double* pos=0 );
+
+/** Calculate intersect between a line and a plane.
+ * \param p A point on the line.
+ * \param v Direction vector of the line.
+ * \param plane The plane.
+ * \param ok return FALSE if the line and the plane are parallel.
+ * \param coplanar return TRUE if the line and the plane are co-planar.
+ * \param pos return the position[0,1] of intersect point on the line.
+ * \return The intersect point.
+ */
+extern vEngine::Vec3 calcIntersect( const vEngine::Vec3 p, const vEngine::Vec3 v, const vEngine::Plane plane,
+                                                  bool* ok=0, bool* coplanar=0, double* pos=0 );
+
+/** Create a plane from 3 different points.
+* \param v1 The first point on the plane.
+* \param v2 The second point on the plane.
+* \param v3 The third point on the plane.
+* \param ok FALSE if given points cannot form a plane.
+* \return The plane.
+*/
+extern vEngine::Plane calcPlane( const vEngine::Vec3 p1, const vEngine::Vec3 p2, const vEngine::Vec3 p3, bool* ok=0 );
+
+/** Build a new coordinate system using given 2 or 3 basis axises and the origin point.
+ * While transform vectors from the standard coordinate system to a customized one, a transition matrix C is needed.
+ * Use v' = vC to get what vector v is in the new coordinate system (The affine coordinates).
+ * Every 3D system has 3 linear-independence vectors as its basis. User may specify all of them or leave one as 0-vector.
+ * The function will normalize and calculate all the vectors and return the transition matrix.
+ * \param orig The origin point of the new system.
+ * \param newX New basis vector x.
+ * \param newY New basis vector y.
+ * \param newZ New basis vector z.
+ * \return The transition matrix.
+ */
+extern vEngine::Matrix coordSystemMatrix( const vEngine::Vec3 orig, vEngine::Vec3 newX, vEngine::Vec3 newY, vEngine::Vec3 newZ );
+
+/** Build the rotate matrix of ANY axis and a specified angle.
+ * Use v' = vC to get the rotated vector.
+ * \param axis The rotate axis.
+ * \param angle The rotate angle in radian format.
+ * \return The rotate matrix.
+ */
+extern vEngine::Matrix rotateMatrix( vEngine::Vec3 axis, const double angle );
+
+/** Check if the orientation from v1 to v2 is clockwise(CW) or counter-clockwise(CCW).
+ * User should specify a ref-vector to project vectors to a plane, because orientations depend on eyesights.
+ * This is useful to determine vertices order of polygons.
+ * The return value is also 2 times of area of the projected triangle.
+ * \param v1 From this vector,
+ * \param v2 To this vector.
+ * \param ref Ref-vector, a vector point to user's eyes. A Z+ reference projects vectors to XY plane.
+ * \return positive if CW, negative if CCW, and 0 if not determinable.
+ */
+extern double checkOrientation( const vEngine::Vec3 v1, const vEngine::Vec3 v2, const vEngine::Vec3 ref=vEngine::Vec3(0.0f,0.0f,1.0f) );
+
+/** Calculate the determinant of a 2x2 matrix.
+* \param m The matrix.
+* \return the DET value.
+*/
+extern double determinant( vEngine::Matrix2 m );
+
+/** Calculate the determinant of a 3x3 matrix.
+ * \param m The matrix.
+ * \return the DET value.
+ */
+extern double determinant( vEngine::Matrix3 m );
+
+/** Calculate the factorial of an integer number.
+ * \param n The integer number.
+ * \param warnLargeValue if set to TRUE, the function will stop running and report when n>32.
+ * \return The result (n!).
+ */
+extern double factorial( const int n, bool warnLargeValue=true );
+
+/** Calculate the linear interpolation of two points.
+ * \param a The first point.
+ * \param b The second point.
+ * \param u The interpolation value, always in [0, 1].
+ * \return The interpolation point.
+ */
+template<typename T>
+inline T lerp( const T& a, const T& b, double u ) { return a*(1.0f-u)+b*u; }
+
+/** Use to compare two vectors in a std::find_if function. */
+struct LessPtr
+{
+    inline bool operator() ( const vEngine::Vec3* lhs, const vEngine::Vec3* rhs ) const
+    {
+        return *lhs < *rhs;
+    }
+};
+
+}
+
+#endif

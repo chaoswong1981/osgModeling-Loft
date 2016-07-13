@@ -1,0 +1,50 @@
+/* -*-c++-*- osgModeling - Copyright (C) 2008 Wang Rui <wangray84@gmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation; either
+* version 2.1 of the License, or (at your option) any later version.
+
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Lesser General Public License for more details.
+
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+#ifndef OSGMODELING_ALGORITHM
+#define OSGMODELING_ALGORITHM 1
+
+#include <vEngine/Object.h>
+
+namespace osgModeling {
+
+class Curve;
+class Model;
+
+/** Algorithm callback base class
+ * Creation and modification of models need kinds of algorithms.
+ * The callback helps build different customized models.
+ * Must implement the operator() method to create customized callbacks.
+ */
+class AlgorithmCallback : public vEngine::Object
+{
+public:
+    AlgorithmCallback() {}
+    AlgorithmCallback( const AlgorithmCallback& copy, const vEngine::CopyOp& copyop=vEngine::CopyOp::SHALLOW_COPY ):
+        vEngine::Object() {}
+    META_Object( osgModeling, AlgorithmCallback );
+
+    virtual void operator()( Model* ) {}
+    virtual void operator()( Curve* ) {}
+
+protected:
+    virtual ~AlgorithmCallback() {}
+};
+
+}
+
+#endif
